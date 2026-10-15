@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旅遊分帳與匯率計算機 (Travel Expense Splitter)</title>
+  <style>
+    :root {
+      --primary: #f59e0b;
+      --primary-light: #fef3c7;
+      --primary-hover: #d97706;
+      --accent: #0284c7;
+      --accent-light: #e0f2fe;
+      --accent-hover: #0369a1;
+      --bg: #fefce8;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #fde047;
+      --success: #059669;
+      --danger: #ef4444;
+      --warning: #d97706;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, #fef08a 0%, #fefce8 300px, #fffbeb 100%);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 50px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+      color: white;
+      text-align: center;
+      padding: 28px 16px 36px 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+    }
+
+    header .decor-cloud {
+      position: absolute;
+      font-size: 1.8rem;
+      opacity: 0.85;
+      user-select: none;
+    }
+    header .cloud-1 { top: 12px; left: 8%; }
+    header .cloud-2 { top: 20px; right: 10%; }
+    header .star-1 { top: 15px; left: 25%; font-size: 1.1rem; color: #fef08a; }
+    header .star-2 { top: 40px; right: 28%; font-size: 1.3rem; color: #fef08a; }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      color: white;
+    }
+    header p {
+      font-size: 0.92rem;
+      opacity: 0.95;
+      font-weight: 600;
+      color: white;
+    }
+
+    .nav-container {
+      max-width: 680px;
+      margin: -20px auto 16px auto;
+      padding: 0 12px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .cat-mascot {
+      text-align: center;
+      margin-bottom: -6px;
+      user-select: none;
+    }
+    .cat-mascot img {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 3px solid #0284c7;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      object-fit: cover;
+      background: #fff;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: #ffffff;
+      border-radius: 30px;
+      padding: 6px;
+      box-shadow: 0 4px 15px rgba(234, 179, 8, 0.15);
+      border: 2px solid #fde047;
+      gap: 2px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 4px;
+      text-align: center;
+      background: none;
+      border: 2px solid transparent;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: #1e3a8a;
+      border-color: #0284c7;
+      background: #fef08a;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.15);
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 22px;
+      border: 1.5px solid #fde047;
+      box-shadow: 0 4px 16px rgba(234, 179, 8, 0.08);
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #1e3a8a;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1.5px solid #fde047;
+      font-size: 0.95rem;
+      background: #fff8f0;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+      background: #fff;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+      color: #1e3a8a;
+      border: none;
+      padding: 12px;
+      font-size: 0.98rem;
+      font-weight: 800;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 3px 10px rgba(234, 179, 8, 0.35);
+    }
+
+    .btn:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      width: auto;
+      border-radius: 8px;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #0284c7;
+      border: 1.5px solid #0284c7;
+      box-shadow: none;
+    }
+
+    .btn-outline:hover { background: #e0f2fe; }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: var(--danger);
+      border: 1px solid #fca5a5;
+      box-shadow: none;
+    }
+
+    .btn-danger:hover { background: #ef4444; color: white; }
+
+    .chip-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .chip {
+      background: #fef9c3;
+      border: 1.5px solid #fde047;
+      padding: 6px 14px 6px 8px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1.5px solid #0284c7;
+      flex-shrink: 0;
+    }
+
+    .chip-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .chip .remove-btn {
+      cursor: pointer;
+      color: #94a3b8;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .chip .remove-btn:hover { color: var(--danger); }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 8px 0;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .expense-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .expense-card {
+      border-radius: 18px;
+      padding: 16px 18px;
+      color: #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .expense-card.theme-0 { background: linear-gradient(135deg, #fef08a 0%, #fde047 100%); border-left: 5px solid #d97706; }
+    .expense-card.theme-1 { background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%); border-left: 5px solid #0284c7; }
+    .expense-card.theme-2 { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); border-left: 5px solid #ca8a04; }
+    .expense-card.theme-3 { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border-left: 5px solid #0369a1; }
+    .expense-card.theme-4 { background: linear-gradient(135deg, #fef08a 0%, #facc15 100%); border-left: 5px solid #b45309; }
+
+    .expense-card .card-main {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .expense-card .category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #1e3a8a;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 3px 10px;
+      border-radius: 12px;
+      width: fit-content;
+    }
+
+    .expense-card .category-badge img {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    .expense-card .title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      margin-top: 2px;
+      color: #0f172a;
+    }
+
+    .expense-card .amount-foreign {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #0284c7;
+    }
+
+    .expense-card .payer-info {
+      font-size: 0.82rem;
+      color: #475569;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .expense-card .card-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3px solid #0284c7;
+      background: white;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(2, 132, 199, 0.2);
+      flex-shrink: 0;
+    }
+
+    .avatar-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .settle-card {
+      background: #ffffff;
+      border: 1.5px solid #fde047;
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(234, 179, 8, 0.08);
+    }
+
+    .settle-pair {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .settle-arrow {
+      font-size: 1.2rem;
+      color: #f59e0b;
+      font-weight: bold;
+    }
+
+    .settle-amount-box {
+      text-align: right;
+    }
+
+    .settle-amount-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0284c7;
+    }
+
+    .settle-status-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .pill-pending { background: #fef08a; color: #b45309; }
+    .pill-done { background: #dcfce7; color: #15803d; }
+
+    .chart-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 16px 0;
+    }
+
+    canvas { max-width: 100%; height: auto; }
+
+    .cat-rank-item { margin-bottom: 14px; }
+    .cat-rank-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .cat-rank-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-rank-label img {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    .progress-bar-bg {
+      height: 10px;
+      background: #fef9c3;
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1px solid #fde047;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #fde047 0%, #eab308 100%);
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+
+    .calc-result-box {
+      background: #fefce8;
+      border: 1.5px solid #fde047;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 14px;
+      text-align: center;
+    }
+    .calc-result-box .val {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: #d97706;
+    }
+
+    .ladder-board-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 16px 0;
+      padding-bottom: 10px;
+    }
+
+    #ladderCanvas {
+      background: #fffdf0;
+      border-radius: 16px;
+      border: 2px dashed #fde047;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.03);
+      display: block;
+      margin: 0 auto;
+    }
+
+    .ladder-prizes-grid {
+      display: flex;
+      justify-content: space-around;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ladder-prize-input {
+      width: 80px;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 6px 4px;
+      border-radius: 10px;
+      border: 1.5px solid #fde047;
+      background: #ffffff;
+      color: #1e3a8a;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="decor-cloud cloud-1">☁️</div>
+    <div class="decor-cloud cloud-2">☁️</div>
+    <div class="decor-cloud star-1">✨</div>
+    <div class="decor-cloud star-2">⭐</div>
+    <h1>✈️ 旅遊分帳與匯率計算機</h1>
+    <p>黃藍經典配色 • 貓咪主題 • 輕鬆分帳</p>
+  </header>
+
+  <div class="nav-container">
+    <div class="cat-mascot">
+      <img src="img/cat_1.jpg" alt="Mascot" onerror="this.src='img/cat_1.jpg'">
+    </div>
+    <nav class="nav-tabs">
+      <button class="tab-btn active" type="button" onclick="switchTab('calc', event)">💱 貨幣速算</button>
+      <button class="tab-btn" type="button" onclick="switchTab('expense', event)">📝 消費記帳</button>
+      <button class="tab-btn" type="button" onclick="switchTab('stats', event)">📊 類別統計</button>
+      <button class="tab-btn" type="button" onclick="switchTab('settle', event)">💰 結算方案</button>
+      <button class="tab-btn" type="button" onclick="switchTab('ladder', event)">🪜 爬梯抽籤</button>
+    </nav>
+  </div>
+
+  <div class="container">
+
+    <!-- TAB 1: 貨幣速算 -->
+    <div id="tab-calc" class="tab-content active">
+      <div class="card">
+        <div class="card-title">💱 外幣購物折算器</div>
+        
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="calcCurrency">選擇幣別</label>
+            <select id="calcCurrency" class="form-control" onchange="updateCalcRate()">
+              <option value="JPY">日圓 JPY</option>
+              <option value="KRW">韓元 KRW</option>
+              <option value="USD">美元 USD</option>
+              <option value="EUR">歐元 EUR</option>
+              <option value="THB">泰銖 THB</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="calcRate">匯率 (折合 TWD)</label>
+            <input type="number" id="calcRate" class="form-control" step="0.0001" value="0.21" oninput="calculateCurrency()">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="calcAmount">標價金額 (外幣)</label>
+          <input type="number" id="calcAmount" class="form-control" placeholder="請輸入標價金額" value="1000" oninput="calculateCurrency()">
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="calcTax">含稅/免稅設定</label>
+            <select id="calcTax" class="form-control" onchange="calculateCurrency()">
+              <option value="1.0">免稅 / 原價</option>
+              <option value="1.1">加 10% 消費稅 (如日本內稅)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="calcDiscount">購物折扣</label>
+            <select id="calcDiscount" class="form-control" onchange="calculateCurrency()">
+              <option value="1.0">無折扣 (100%)</option>
+              <option value="0.95">95 折 (5% OFF)</option>
+              <option value="0.9">9 折 (10% OFF)</option>
+              <option value="0.85">85 折 (15% OFF)</option>
+              <option value="0.8">8 折 (20% OFF)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="calc-result-box">
+          <div style="font-size:0.85rem; color:var(--text-muted);">折合新台幣約</div>
+          <div id="calcResultTWD" class="val">NT$ 210</div>
+          <div id="calcResultDetail" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">外幣實付：1,000 JPY</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 消費記帳 -->
+    <div id="tab-expense" class="tab-content">
+      
+      <!-- 成員管理 -->
+      <div class="card">
+        <div class="card-title">
+          <span>👥 同行成員與貓咪頭像</span>
+          <button class="btn btn-sm btn-outline" type="button" onclick="addMember()">+ 新增成員</button>
+        </div>
+        <div id="memberChips" class="chip-group"></div>
+      </div>
+
+      <!-- 新增消費表單 -->
+      <div class="card">
+        <div class="card-title">➕ 新增一筆消費</div>
+
+        <div class="form-group">
+          <label for="expTitle">消費項目名稱</label>
+          <input type="text" id="expTitle" class="form-control" placeholder="如：晚餐居酒屋、景點門票">
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group">
+            <label for="expCurrency">幣別</label>
+            <select id="expCurrency" class="form-control" onchange="syncExpRate()">
+              <option value="JPY">JPY 日圓</option>
+              <option value="KRW">KRW 韓元</option>
+              <option value="USD">USD 美元</option>
+              <option value="EUR">EUR 歐元</option>
+              <option value="TWD">TWD 台幣</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="expAmount">外幣金額</label>
+            <input type="number" id="expAmount" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label for="expRate">匯率 (TWD)</label>
+            <input type="number" id="expRate" class="form-control" step="0.0001" value="0.21">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">消費類別</label>
+            <button class="btn btn-sm btn-outline" type="button" style="padding:2px 8px;" onclick="addCategory()">+ 新增類別</button>
+          </div>
+          <select id="expCategory" class="form-control"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="expPayer">誰先墊錢？(付款人)</label>
+          <select id="expPayer" class="form-control"></select>
+        </div>
+
+        <div class="form-group">
+          <label>誰參與分攤？</label>
+          <div style="margin-bottom:4px;">
+            <button class="btn btn-sm btn-outline" type="button" onclick="selectAllSplit(true)">全選</button>
+            <button class="btn btn-sm btn-outline" type="button" onclick="selectAllSplit(false)">全不選</button>
+          </div>
+          <div id="splitCheckboxes" class="checkbox-group"></div>
+        </div>
+
+        <button class="btn" type="button" onclick="saveExpense()">新增此筆消費</button>
+      </div>
+
+      <!-- 消費歷史紀錄卡片清單 -->
+      <div class="card">
+        <div class="card-title">
+          <span>👥 旅伴與消費明細</span>
+          <span id="expTotalCount" style="font-size:0.85rem; font-weight:normal; color:var(--text-muted);">共 0 筆</span>
+        </div>
+        <div id="expenseList" class="expense-card-list"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 類別統計 -->
+    <div id="tab-stats" class="tab-content">
+      <div class="card">
+        <div class="card-title">📊 旅程消費總覽</div>
+        <div class="grid-2" style="text-align:center; margin-bottom:12px;">
+          <div style="background:#fefce8; padding:12px; border-radius:12px; border:1.5px solid #fde047;">
+            <div style="font-size:0.8rem; color:var(--text-muted);">總花費 (TWD)</div>
+            <div id="statsTotalTWD" style="font-size:1.4rem; font-weight:800; color:#d97706;">NT$ 0</div>
+          </div>
+          <div style="background:#f0fdf4; padding:12px; border-radius:12px; border:1.5px solid #bbf7d0;">
+            <div style="font-size:0.8rem; color:var(--text-muted);">每人人均 (TWD)</div>
+            <div id="statsPerPersonTWD" style="font-size:1.4rem; font-weight:800; color:var(--success);">NT$ 0</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="pieChart" width="280" height="280"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏷️ 各類別花費排行榜</div>
+        <div id="categoryRankList"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: 結算方案 -->
+    <div id="tab-settle" class="tab-content">
+      <div class="card">
+        <div class="card-title">💸 結算方案 (誰該給誰多少錢)</div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
+          系統已透過演算法計算出<b>最少轉帳次數</b>的最佳化結算方案：
+        </p>
+
+        <div id="settleList"></div>
+
+        <button class="btn btn-outline" type="button" style="margin-top:12px;" onclick="copySettleSummary()">📋 複製完整結算報告文字</button>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <button class="btn btn-danger" type="button" onclick="clearAllData()">🗑️ 重置所有旅程資料</button>
+      </div>
+    </div>
+
+    <!-- TAB 5: 🪜 爬梯子抽籤遊戲（無頭像乾淨版） -->
+    <div id="tab-ladder" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>🪜 爬梯子抽籤小遊戲</span>
+          <button class="btn btn-sm btn-outline" type="button" onclick="generateLadder()">🎲 重新生成梯子</button>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+          頂部為同行成員名稱與專屬代表色！點擊「全員開始爬梯」查看抽籤結果！
+        </p>
+
+        <!-- 獎項設定區塊 -->
+        <div class="form-group">
+          <label>設定底部對應獎項 / 懲罰：</label>
+          <div id="ladderPrizesGrid" class="ladder-prizes-grid"></div>
+        </div>
+
+        <!-- 梯子畫布 -->
+        <div class="ladder-board-container">
+          <canvas id="ladderCanvas" width="380" height="340"></canvas>
+        </div>
+
+        <div class="grid-2">
+          <button class="btn" type="button" onclick="startAllLadderAnimation()">🚀 全員開始爬梯子！</button>
+          <button class="btn btn-outline" type="button" onclick="resetLadderPath()">🔄 清除爬梯路線</button>
+        </div>
+
+        <div id="ladderResultBox" class="calc-result-box" style="display:none; margin-top:14px;">
+          <div style="font-size:0.85rem; color:var(--text-muted);">🎉 爬梯結果公告</div>
+          <div id="ladderResultText" style="font-size:1.05rem; font-weight:800; color:#0284c7; margin-top:6px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* 貓咪頭像列表 (img/cat_1.jpg ~ cat_10.jpg) */
+    var catImageFiles = [
+      'img/cat_1.jpg',
+      'img/cat_2.jpg',
+      'img/cat_3.jpg',
+      'img/cat_4.jpg',
+      'img/cat_5.jpg',
+      'img/cat_6.jpg',
+      'img/cat_7.jpg',
+      'img/cat_8.jpg',
+      'img/cat_9.jpg',
+      'img/cat_10.jpg'
+    ];
+
+    /* 類別與對應圖片字典 (img/FOOD.jpg, stay.jpg 等) */
+    var categoryImageMap = {
+      '餐飲': 'img/FOOD.jpg',
+      '門票': 'img/Tickets.jpg',
+      '交通': 'img/transportation.jpg',
+      '住宿': 'img/stay.jpg',
+      '購物': 'img/Shopping.jpg',
+      '雜項': 'img/Miscellaneous.jpg'
+    };
+
+    function getCatImgPath(idx) {
+      return catImageFiles[idx % catImageFiles.length];
+    }
+
+    function getCategoryImgPath(catName) {
+      for (var key in categoryImageMap) {
+        if (catName.indexOf(key) !== -1) {
+          return categoryImageMap[key];
+        }
+      }
+      return 'img/Miscellaneous.jpg';
+    }
+
+    function getDefaultAppData() {
+      return {
+        members: ['翔太', '陽菜', '拓海', '浩之'],
+        categories: ['🍣 餐飲', '🎟️ 門票', '🎫 交通', '🏨 住宿', '🛍️ 購物', '📦 雜項'],
+        expenses: [
+          { uniqueKey: 1, title: '晚餐居酒屋', curr: 'JPY', foreignAmt: 12000, rate: 0.21, twdAmt: 2520, category: '🍣 餐飲', payer: '翔太', splitMembers: ['翔太', '陽菜', '拓海', '浩之'], themeIdx: 0 },
+          { uniqueKey: 2, title: '景點門票', curr: 'JPY', foreignAmt: 8500, rate: 0.21, twdAmt: 1785, category: '🎟️ 門票', payer: '陽菜', splitMembers: ['翔太', '陽菜', '拓海', '浩之'], themeIdx: 1 },
+          { uniqueKey: 3, title: '交通票券', curr: 'JPY', foreignAmt: 4200, rate: 0.21, twdAmt: 882, category: '🎫 交通', payer: '拓海', splitMembers: ['翔太', '陽菜', '拓海', '浩之'], themeIdx: 2 }
+        ],
+        rates: { 'JPY': 0.21, 'KRW': 0.024, 'USD': 32.0, 'EUR': 34.5, 'THB': 0.92, 'TWD': 1.0 },
+        settleStatus: {}
+      };
+    }
+
+    var appData = getDefaultAppData();
+
+    function initApp() {
+      var saved = localStorage.getItem('travel_splitter_data_v5');
+      if (saved) {
+        try {
+          appData = JSON.parse(saved);
+        } catch(e) {
+          appData = getDefaultAppData();
+        }
+      } else {
+        appData = getDefaultAppData();
+        saveData();
+      }
+      renderMembers();
+      renderCategorySelect();
+      renderPayerSelect();
+      renderSplitCheckboxes();
+      renderExpenseList();
+      calculateCurrency();
+    }
+
+    function saveData() {
+      localStorage.setItem('travel_splitter_data_v5', JSON.stringify(appData));
+    }
+
+    function switchTab(tabId, evt) {
+      var btns = document.querySelectorAll('.tab-btn');
+      var contents = document.querySelectorAll('.tab-content');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+      }
+      for (var j = 0; j < contents.length; j++) {
+        contents[j].classList.remove('active');
+      }
+
+      if (evt && evt.currentTarget) {
+        evt.currentTarget.classList.add('active');
+      }
+      document.getElementById('tab-' + tabId).classList.add('active');
+
+      if (tabId === 'stats') renderStats();
+      if (tabId === 'settle') renderSettle();
+      if (tabId === 'ladder') initLadderTab();
+    }
+
+    function updateCalcRate() {
+      var curr = document.getElementById('calcCurrency').value;
+      document.getElementById('calcRate').value = appData.rates[curr] || 1;
+      calculateCurrency();
+    }
+
+    function calculateCurrency() {
+      var amount = parseFloat(document.getElementById('calcAmount').value) || 0;
+      var rate = parseFloat(document.getElementById('calcRate').value) || 0;
+      var tax = parseFloat(document.getElementById('calcTax').value) || 1.0;
+      var discount = parseFloat(document.getElementById('calcDiscount').value) || 1.0;
+      var curr = document.getElementById('calcCurrency').value;
+
+      var finalForeign = Math.round(amount * tax * discount * 100) / 100;
+      var finalTWD = Math.round(finalForeign * rate);
+
+      document.getElementById('calcResultTWD').innerText = 'NT$ ' + finalTWD.toLocaleString();
+      document.getElementById('calcResultDetail').innerText = '外幣實付：' + finalForeign.toLocaleString() + ' ' + curr + ' (原價 ' + amount + ')';
+    }
+
+    function renderMembers() {
+      var container = document.getElementById('memberChips');
+      var html = '';
+      for (var i = 0; i < appData.members.length; i++) {
+        var m = appData.members[i];
+        var imgPath = getCatImgPath(i);
+        html += '<div class="chip">';
+        html += '  <div class="chip-avatar"><img src="' + imgPath + '" alt="' + m + '"></div>';
+        html += '  <span>' + m + '</span>';
+        html += '  <span class="remove-btn" onclick="removeMember(' + i + ')">×</span>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+
+      renderPayerSelect();
+      renderSplitCheckboxes();
+    }
+
+    function addMember() {
+      var name = prompt('請輸入新成員姓名：');
+      if (name && name.trim()) {
+        appData.members.push(name.trim());
+        saveData();
+        renderMembers();
+      }
+    }
+
+    function removeMember(idx) {
+      if (appData.members.length <= 1) {
+        alert('至少需保留一位成員！');
+        return;
+      }
+      appData.members.splice(idx, 1);
+      saveData();
+      renderMembers();
+    }
+
+    function renderCategorySelect() {
+      var sel = document.getElementById('expCategory');
+      var html = '';
+      for (var i = 0; i < appData.categories.length; i++) {
+        var c = appData.categories[i];
+        html += '<option value="' + c + '">' + c + '</option>';
+      }
+      sel.innerHTML = html;
+    }
+
+    function addCategory() {
+      var cat = prompt('請輸入新類別名稱（可帶 Emoji）：');
+      if (cat && cat.trim()) {
+        appData.categories.push(cat.trim());
+        saveData();
+        renderCategorySelect();
+      }
+    }
+
+    function renderPayerSelect() {
+      var sel = document.getElementById('expPayer');
+      var html = '';
+      for (var i = 0; i < appData.members.length; i++) {
+        var m = appData.members[i];
+        html += '<option value="' + m + '">' + m + '</option>';
+      }
+      sel.innerHTML = html;
+    }
+
+    function renderSplitCheckboxes() {
+      var container = document.getElementById('splitCheckboxes');
+      var html = '';
+      for (var i = 0; i < appData.members.length; i++) {
+        var m = appData.members[i];
+        html += '<label class="checkbox-item"><input type="checkbox" name="splitMember" value="' + m + '" checked><span>' + m + '</span></label>';
+      }
+      container.innerHTML = html;
+    }
+
+    function selectAllSplit(select) {
+      var cbs = document.querySelectorAll('input[name="splitMember"]');
+      for (var i = 0; i < cbs.length; i++) {
+        cbs[i].checked = select;
+      }
+    }
+
+    function syncExpRate() {
+      var curr = document.getElementById('expCurrency').value;
+      document.getElementById('expRate').value = appData.rates[curr] || 1;
+    }
+
+    function saveExpense() {
+      var title = document.getElementById('expTitle').value.trim() || '未命名消費';
+      var curr = document.getElementById('expCurrency').value;
+      var foreignAmt = parseFloat(document.getElementById('expAmount').value);
+      var rate = parseFloat(document.getElementById('expRate').value) || 1;
+      var category = document.getElementById('expCategory').value;
+      var payer = document.getElementById('expPayer').value;
+
+      var cbs = document.querySelectorAll('input[name="splitMember"]:checked');
+      var checkedSplit = [];
+      for (var i = 0; i < cbs.length; i++) {
+        checkedSplit.push(cbs[i].value);
+      }
+
+      if (!foreignAmt || foreignAmt <= 0) {
+        alert('請輸入有效的消費金額！');
+        return;
+      }
+      if (checkedSplit.length === 0) {
+        alert('請至少勾選一位分攤成員！');
+        return;
+      }
+
+      var twdAmt = Math.round(foreignAmt * rate);
+      var themeIdx = appData.expenses.length % 5;
+
+      var item = {
+        uniqueKey: new Date().getTime(),
+        title: title,
+        curr: curr,
+        foreignAmt: foreignAmt,
+        rate: rate,
+        twdAmt: twdAmt,
+        category: category,
+        payer: payer,
+        splitMembers: checkedSplit,
+        themeIdx: themeIdx
+      };
+
+      appData.expenses.unshift(item);
+      saveData();
+
+      document.getElementById('expTitle').value = '';
+      document.getElementById('expAmount').value = '';
+
+      renderExpenseList();
+      alert('已成功新增消費紀錄！');
+    }
+
+    function renderExpenseList() {
+      var container = document.getElementById('expenseList');
+      document.getElementById('expTotalCount').innerText = '共 ' + appData.expenses.length + ' 筆';
+
+      if (appData.expenses.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">尚無消費紀錄</div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < appData.expenses.length; i++) {
+        var e = appData.expenses[i];
+        var payerIdx = appData.members.indexOf(e.payer);
+        if (payerIdx < 0) payerIdx = 0;
+        var avatarPath = getCatImgPath(payerIdx);
+        var catImgPath = getCategoryImgPath(e.category);
+        var themeClass = 'theme-' + (e.themeIdx !== undefined ? e.themeIdx : (i % 5));
+
+        html += '<div class="expense-card ' + themeClass + '">';
+        html += '  <div class="card-main">';
+        html += '    <div class="category-badge"><img src="' + catImgPath + '" alt="cat"><span>' + e.category + '</span></div>';
+        html += '    <div class="title">' + e.title + '</div>';
+        html += '    <div class="amount-foreign">' + e.foreignAmt.toLocaleString() + ' ' + e.curr + ' (NT$ ' + e.twdAmt.toLocaleString() + ')</div>';
+        html += '    <div class="payer-info">付款人：' + e.payer + ' | 分攤: ' + e.splitMembers.join(', ') + '</div>';
+        html += '  </div>';
+        html += '  <div class="card-right">';
+        html += '    <div class="avatar-badge"><img src="' + avatarPath + '" alt="payer"></div>';
+        html += '    <button class="btn btn-sm btn-danger" type="button" style="padding:4px 8px; font-size:0.75rem;" onclick="deleteExpense(' + e.uniqueKey + ')">✕</button>';
+        html += '  </div>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function deleteExpense(targetKey) {
+      if (confirm('確定要刪除這筆消費嗎？')) {
+        var newExpenses = [];
+        for (var i = 0; i < appData.expenses.length; i++) {
+          if (appData.expenses[i].uniqueKey !== targetKey) {
+            newExpenses.push(appData.expenses[i]);
+          }
+        }
+        appData.expenses = newExpenses;
+        saveData();
+        renderExpenseList();
+      }
+    }
+
+    function renderStats() {
+      var totalTWD = 0;
+      for (var i = 0; i < appData.expenses.length; i++) {
+        totalTWD += appData.expenses[i].twdAmt;
+      }
+      var perPerson = appData.members.length > 0 ? Math.round(totalTWD / appData.members.length) : 0;
+
+      document.getElementById('statsTotalTWD').innerText = 'NT$ ' + totalTWD.toLocaleString();
+      document.getElementById('statsPerPersonTWD').innerText = 'NT$ ' + perPerson.toLocaleString();
+
+      var catTotals = {};
+      for (var c = 0; c < appData.categories.length; c++) {
+        catTotals[appData.categories[c]] = 0;
+      }
+
+      for (var e = 0; e < appData.expenses.length; e++) {
+        var exp = appData.expenses[e];
+        catTotals[exp.category] = (catTotals[exp.category] || 0) + exp.twdAmt;
+      }
+
+      drawPieChart(catTotals, totalTWD);
+
+      var rankContainer = document.getElementById('categoryRankList');
+      var keys = Object.keys(catTotals);
+      keys.sort(function(a, b) { return catTotals[b] - catTotals[a]; });
+
+      var html = '';
+      for (var k = 0; k < keys.length; k++) {
+        var catName = keys[k];
+        var amt = catTotals[catName];
+        var pct = totalTWD > 0 ? ((amt / totalTWD) * 100).toFixed(1) : 0;
+        var catImg = getCategoryImgPath(catName);
+
+        html += '<div class="cat-rank-item">';
+        html += '  <div class="cat-rank-header">';
+        html += '    <div class="cat-rank-label"><img src="' + catImg + '" alt="cat"><span>' + catName + '</span></div>';
+        html += '    <span>NT$ ' + amt.toLocaleString() + ' (' + pct + '%)</span>';
+        html += '  </div>';
+        html += '  <div class="progress-bar-bg">';
+        html += '    <div class="progress-bar-fill" style="width: ' + pct + '%"></div>';
+        html += '  </div>';
+        html += '</div>';
+      }
+      rankContainer.innerHTML = html;
+    }
+
+    function drawPieChart(catTotals, total) {
+      var canvas = document.getElementById('pieChart');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (total === 0) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('尚無數據可繪製圓餅圖', canvas.width/2, canvas.height/2);
+        return;
+      }
+
+      var colors = ['#f59e0b', '#0284c7', '#eab308', '#10b981', '#38bdf8', '#d97706', '#0369a1'];
+      var startAngle = 0;
+      var colorIdx = 0;
+
+      var keys = [];
+      var allKeys = Object.keys(catTotals);
+      for (var i = 0; i < allKeys.length; i++) {
+        if (catTotals[allKeys[i]] > 0) keys.push(allKeys[i]);
+      }
+
+      for (var k = 0; k < keys.length; k++) {
+        var val = catTotals[keys[k]];
+        var sliceAngle = (val / total) * 2 * Math.PI;
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2, canvas.height/2);
+        ctx.arc(canvas.width/2, canvas.height/2, 100, startAngle, startAngle + sliceAngle);
+        ctx.closePath();
+
+        ctx.fillStyle = colors[colorIdx % colors.length];
+        ctx.fill();
+
+        startAngle += sliceAngle;
+        colorIdx++;
+      }
+
+      ctx.beginPath();
+      ctx.arc(canvas.width/2, canvas.height/2, 55, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      ctx.fillStyle = '#1e3a8a';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('類別佔比', canvas.width/2, canvas.height/2);
+    }
+
+    function renderSettle() {
+      var container = document.getElementById('settleList');
+
+      if (appData.expenses.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">尚無消費數據可供結算</div>';
+        return;
+      }
+
+      var balances = {};
+      for (var i = 0; i < appData.members.length; i++) {
+        balances[appData.members[i]] = 0;
+      }
+
+      for (var e = 0; e < appData.expenses.length; e++) {
+        var exp = appData.expenses[e];
+        balances[exp.payer] = (balances[exp.payer] || 0) + exp.twdAmt;
+
+        var perAmt = exp.twdAmt / exp.splitMembers.length;
+        for (var s = 0; s < exp.splitMembers.length; s++) {
+          var member = exp.splitMembers[s];
+          balances[member] = (balances[member] || 0) - perAmt;
+        }
+      }
+
+      var debtors = [];
+      var creditors = [];
+
+      var mKeys = Object.keys(balances);
+      for (var k = 0; k < mKeys.length; k++) {
+        var m = mKeys[k];
+        var bal = Math.round(balances[m]);
+        if (bal < -1) debtors.push({ memberName: m, owedAmount: -bal });
+        else if (bal > 1) creditors.push({ memberName: m, owedAmount: bal });
+      }
+
+      var transactions = [];
+      var dIdx = 0;
+      var cIdx = 0;
+
+      while (dIdx < debtors.length && cIdx < creditors.length) {
+        var debtor = debtors[dIdx];
+        var creditor = creditors[cIdx];
+
+        var minAmt = Math.min(debtor.owedAmount, creditor.owedAmount);
+        transactions.push({ fromName: debtor.memberName, toName: creditor.memberName, amount: Math.round(minAmt) });
+
+        debtor.owedAmount -= minAmt;
+        creditor.owedAmount -= minAmt;
+
+        if (debtor.owedAmount <= 1) dIdx++;
+        if (creditor.owedAmount <= 1) cIdx++;
+      }
+
+      if (transactions.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--success); font-weight:bold; padding:20px;">🎉 所有人帳目完全平衡，無須轉帳！</div>';
+        return;
+      }
+
+      var html = '';
+      for (var t = 0; t < transactions.length; t++) {
+        var item = transactions[t];
+        var fromIdx = appData.members.indexOf(item.fromName);
+        var toIdx = appData.members.indexOf(item.toName);
+        var fromAvatar = getCatImgPath(fromIdx >= 0 ? fromIdx : 0);
+        var toAvatar = getCatImgPath(toIdx >= 0 ? toIdx : 1);
+
+        var statusKey = item.fromName + '_' + item.toName;
+        var isDone = appData.settleStatus && appData.settleStatus[statusKey];
+        var pillClass = isDone ? 'pill-done' : 'pill-pending';
+        var pillText = isDone ? '✓ 已結清' : '待付款';
+
+        html += '<div class="settle-card">';
+        html += '  <div class="settle-pair">';
+        html += '    <div class="avatar-badge" style="width:38px; height:38px;"><img src="' + fromAvatar + '" alt="from"></div>';
+        html += '    <span style="font-weight:700; font-size:0.95rem;">' + item.fromName + '</span>';
+        html += '    <span class="settle-arrow">➔</span>';
+        html += '    <div class="avatar-badge" style="width:38px; height:38px;"><img src="' + toAvatar + '" alt="to"></div>';
+        html += '    <span style="font-weight:700; font-size:0.95rem;">' + item.toName + '</span>';
+        html += '  </div>';
+        html += '  <div class="settle-amount-box">';
+        html += '    <div class="settle-amount-val">NT$ ' + item.amount.toLocaleString() + '</div>';
+        html += '    <span class="settle-status-pill ' + pillClass + '" data-key="' + statusKey + '" onclick="toggleSettleStatus(this.dataset.key)">' + pillText + '</span>';
+        html += '  </div>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function toggleSettleStatus(key) {
+      if (!appData.settleStatus) appData.settleStatus = {};
+      appData.settleStatus[key] = !appData.settleStatus[key];
+      saveData();
+      renderSettle();
+    }
+
+    function copySettleSummary() {
+      var totalTWD = 0;
+      for (var i = 0; i < appData.expenses.length; i++) {
+        totalTWD += appData.expenses[i].twdAmt;
+      }
+
+      var txt = '✈️ 旅程消費結算總覽卡\n--------------------\n💰 總支出：NT$ ' + totalTWD.toLocaleString() + '\n\n📋 轉帳指示：\n';
+      var settleCards = document.querySelectorAll('.settle-card');
+      if (settleCards.length === 0) {
+        txt += '所有人帳目皆已平衡，無須轉帳！\n';
+      } else {
+        for (var c = 0; c < settleCards.length; c++) {
+          var pair = settleCards[c].querySelector('.settle-pair').innerText.replace(/\s+/g, ' ');
+          var amt = settleCards[c].querySelector('.settle-amount-val').innerText;
+          var pill = settleCards[c].querySelector('.settle-status-pill').innerText;
+          txt += '• ' + pair + ' ' + amt + ' [' + pill + ']\n';
+        }
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function() {
+          alert('結算報告已成功複製到剪貼簿！可以貼給好友囉！');
+        }).catch(function() {
+          alert('複製失敗，請手動複製。');
+        });
+      } else {
+        alert('不支援自動複製，報告內容如下：\n' + txt);
+      }
+    }
+
+    /* ------------------------------------------------------------- */
+    /* 🪜 爬梯子（Amidakuji）核心邏輯與 Canvas 繪製（無頭像乾淨版）     */
+    /* ------------------------------------------------------------- */
+    var defaultPrizePool = ['🧋 請喝飲料', '🥐 買早餐', '🎉 安全過關', '🧹 整理房間', '🎉 安全過關', '🍦 請吃冰淇淋'];
+    var memberColors = ['#0284c7', '#eab308', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#f59e0b', '#06b6d4'];
+
+    var ladderData = {
+      lines: [],        // 橫線結構: { col: 0, yRatio: 0.2 }
+      prizes: [],       // 底部對應獎項
+      paths: [],        // 各成員移動路徑
+      activePaths: []   // 正在繪製動畫的路徑
+    };
+
+    function initLadderTab() {
+      renderLadderPrizeInputs();
+      generateLadder();
+    }
+
+    function renderLadderPrizeInputs() {
+      var grid = document.getElementById('ladderPrizesGrid');
+      var numMembers = appData.members.length;
+      var html = '';
+      
+      for (var i = 0; i < numMembers; i++) {
+        var val = ladderData.prizes[i] || defaultPrizePool[i % defaultPrizePool.length];
+        html += '<input type="text" class="ladder-prize-input" id="prize_input_' + i + '" value="' + val + '" onchange="updateLadderPrize(' + i + ', this.value)">';
+      }
+      grid.innerHTML = html;
+    }
+
+    function updateLadderPrize(idx, val) {
+      ladderData.prizes[idx] = val;
+      drawLadderCanvas();
+    }
+
+    function generateLadder() {
+      var numMembers = appData.members.length;
+      var lines = [];
+      var levels = 6; // 6層橫線高度
+
+      for (var level = 1; level <= levels; level++) {
+        var yRatio = level / (levels + 1);
+        for (var col = 0; col < numMembers - 1; col++) {
+          if (Math.random() < 0.5) {
+            lines.push({ col: col, yRatio: yRatio });
+            col++; // 避免相鄰連線重疊
+          }
+        }
+      }
+
+      ladderData.lines = lines;
+      ladderData.activePaths = [];
+
+      // 預設獎項
+      var prizes = [];
+      for (var i = 0; i < numMembers; i++) {
+        var inp = document.getElementById('prize_input_' + i);
+        prizes.push(inp ? inp.value : defaultPrizePool[i % defaultPrizePool.length]);
+      }
+      ladderData.prizes = prizes;
+
+      calculateLadderPaths();
+      drawLadderCanvas();
+      document.getElementById('ladderResultBox').style.display = 'none';
+    }
+
+    function calculateLadderPaths() {
+      var numMembers = appData.members.length;
+      var lines = ladderData.lines.slice();
+      lines.sort(function(a, b) { return a.yRatio - b.yRatio; });
+
+      var paths = [];
+      for (var startCol = 0; startCol < numMembers; startCol++) {
+        var currentCol = startCol;
+        var path = [{ col: currentCol, yRatio: 0 }];
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          if (line.col === currentCol) {
+            path.push({ col: currentCol, yRatio: line.yRatio });
+            currentCol = currentCol + 1;
+            path.push({ col: currentCol, yRatio: line.yRatio });
+          } else if (line.col === currentCol - 1) {
+            path.push({ col: currentCol, yRatio: line.yRatio });
+            currentCol = currentCol - 1;
+            path.push({ col: currentCol, yRatio: line.yRatio });
+          }
+        }
+
+        path.push({ col: currentCol, yRatio: 1 });
+        paths.push({ startCol: startCol, finalCol: currentCol, points: path });
+      }
+
+      ladderData.paths = paths;
+    }
+
+    function drawLadderCanvas() {
+      var canvas = document.getElementById('ladderCanvas');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      var numMembers = appData.members.length;
+      var width = Math.max(360, numMembers * 85);
+      canvas.width = width;
+      canvas.height = 340;
+
+      ctx.clearRect(0, 0, width, 340);
+
+      var startY = 50;
+      var endY = 270;
+      var marginX = 45;
+      var colSpacing = (width - marginX * 2) / Math.max(1, numMembers - 1);
+
+      // 繪製頂部成員代表色圓圈與名稱（無貓咪頭像乾淨版）
+      for (var m = 0; m < numMembers; m++) {
+        var x = marginX + m * colSpacing;
+        var mColor = memberColors[m % memberColors.length];
+
+        // 頂部圓點
+        ctx.beginPath();
+        ctx.arc(x, 22, 10, 0, Math.PI * 2);
+        ctx.fillStyle = mColor;
+        ctx.fill();
+
+        // 頂部成員名稱
+        ctx.fillStyle = '#1e3a8a';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(appData.members[m], x, 42);
+
+        // 垂直骨架線
+        ctx.beginPath();
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+        ctx.stroke();
+      }
+
+      // 繪製橫線
+      for (var l = 0; l < ladderData.lines.length; l++) {
+        var line = ladderData.lines[l];
+        var x1 = marginX + line.col * colSpacing;
+        var x2 = marginX + (line.col + 1) * colSpacing;
+        var y = startY + line.yRatio * (endY - startY);
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 3;
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x2, y);
+        ctx.stroke();
+      }
+
+      // 繪製爬梯移動路線
+      for (var p = 0; p < ladderData.activePaths.length; p++) {
+        var pathIdx = ladderData.activePaths[p];
+        var pathObj = ladderData.paths[pathIdx];
+        var color = memberColors[pathIdx % memberColors.length];
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.lineJoin = 'round';
+
+        for (var pt = 0; pt < pathObj.points.length; pt++) {
+          var point = pathObj.points[pt];
+          var px = marginX + point.col * colSpacing;
+          var py = startY + point.yRatio * (endY - startY);
+          if (pt === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // 終點彩球
+        var lastPt = pathObj.points[pathObj.points.length - 1];
+        var endPx = marginX + lastPt.col * colSpacing;
+        var endPy = startY + lastPt.yRatio * (endY - startY);
+        ctx.beginPath();
+        ctx.arc(endPx, endPy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      // 繪製底部文字結果
+      for (var b = 0; b < numMembers; b++) {
+        var bx = marginX + b * colSpacing;
+        var pText = ladderData.prizes[b] || defaultPrizePool[b % defaultPrizePool.length];
+
+        ctx.fillStyle = '#d97706';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(pText, bx, endY + 28);
+      }
+    }
+
+    function startAllLadderAnimation() {
+      var numMembers = appData.members.length;
+      ladderData.activePaths = [];
+      for (var i = 0; i < numMembers; i++) {
+        ladderData.activePaths.push(i);
+      }
+      drawLadderCanvas();
+
+      var resultHtml = '';
+      for (var p = 0; p < ladderData.paths.length; p++) {
+        var res = ladderData.paths[p];
+        var mName = appData.members[res.startCol];
+        var prize = ladderData.prizes[res.finalCol] || defaultPrizePool[res.finalCol % defaultPrizePool.length];
+        resultHtml += '<div style="margin-bottom:4px;"><b>' + mName + '</b> ➔ ' + prize + '</div>';
+      }
+
+      var resBox = document.getElementById('ladderResultBox');
+      document.getElementById('ladderResultText').innerHTML = resultHtml;
+      resBox.style.display = 'block';
+    }
+
+    function resetLadderPath() {
+      ladderData.activePaths = [];
+      drawLadderCanvas();
+      document.getElementById('ladderResultBox').style.display = 'none';
+    }
+
+    function clearAllData() {
+      if (confirm('確定要重置並清空所有消費與成員資料嗎？此操作無法復原。')) {
+        appData = {
+          members: ['翔太', '陽菜', '拓海', '浩之'],
+          categories: ['🍣 餐飲', '🎟️ 門票', '🎫 交通', '🏨 住宿', '🛍️ 購物', '📦 雜項'],
+          expenses: [],
+          rates: { 'JPY': 0.21, 'KRW': 0.024, 'USD': 32.0, 'EUR': 34.5, 'THB': 0.92, 'TWD': 1.0 },
+          settleStatus: {}
+        };
+        saveData();
+        renderMembers();
+        renderCategorySelect();
+        renderPayerSelect();
+        renderSplitCheckboxes();
+        renderExpenseList();
+        renderStats();
+        renderSettle();
+        calculateCurrency();
+        alert('資料已成功重置為清空狀態！');
+      }
+    }
+
+    window.onload = initApp;
+  </script>
+</body>
+</html>
